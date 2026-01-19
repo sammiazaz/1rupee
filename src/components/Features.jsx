@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+
 const featuresData = [
     {
         id: 1,
@@ -105,11 +107,123 @@ const featuresData = [
     }
 ]
 
+function FeatureCard({ feature, index }) {
+    const cardRef = useRef(null)
+
+    useEffect(() => {
+        const card = cardRef.current
+        if (!card) return
+
+        const handleMouseMove = (e) => {
+            const rect = card.getBoundingClientRect()
+            const x = e.clientX - rect.left
+            const y = e.clientY - rect.top
+
+            const centerX = rect.width / 2
+            const centerY = rect.height / 2
+
+            const rotateX = (y - centerY) / 20
+            const rotateY = (centerX - x) / 20
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`
+        }
+
+        const handleMouseLeave = () => {
+            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)'
+        }
+
+        card.addEventListener('mousemove', handleMouseMove)
+        card.addEventListener('mouseleave', handleMouseLeave)
+
+        return () => {
+            card.removeEventListener('mousemove', handleMouseMove)
+            card.removeEventListener('mouseleave', handleMouseLeave)
+        }
+    }, [])
+
+    useEffect(() => {
+        const card = cardRef.current
+        if (!card) return
+
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1'
+                        entry.target.style.transform = 'translateY(0)'
+                        observer.unobserve(entry.target)
+                    }
+                })
+            },
+            {
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
+            }
+        )
+
+        card.style.opacity = '0'
+        card.style.transform = 'translateY(30px)'
+        card.style.transition = `all 0.6s ease ${index * 0.1}s`
+
+        observer.observe(card)
+
+        return () => observer.disconnect()
+    }, [index])
+
+    return (
+        <div ref={cardRef} className="feature-card" data-feature={feature.id}>
+            <div className="feature-icon">
+                {feature.icon}
+            </div>
+            <h3 className="feature-title">{feature.title}</h3>
+            <p className="feature-description">{feature.description}</p>
+            <a href="#" className="feature-link">
+                Learn more
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+            </a>
+        </div>
+    )
+}
+
 function Features() {
+    const headerRef = useRef(null)
+
+    useEffect(() => {
+        const header = headerRef.current
+        if (!header) return
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1'
+                        entry.target.style.transform = 'translateY(0)'
+                        observer.unobserve(entry.target)
+                    }
+                })
+            },
+            {
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
+            }
+        )
+
+        header.style.opacity = '0'
+        header.style.transform = 'translateY(30px)'
+        header.style.transition = 'all 0.8s ease'
+
+        observer.observe(header)
+
+        return () => observer.disconnect()
+    }, [])
+
     return (
         <section className="features" id="features">
             <div className="container">
-                <div className="section-header">
+                <div ref={headerRef} className="section-header">
                     <div className="badge">
                         <span className="badge-dot"></span>
                         Features
@@ -118,20 +232,8 @@ function Features() {
                     <p className="section-description">Powerful features designed to make financial management effortless</p>
                 </div>
                 <div className="features-grid">
-                    {featuresData.map((feature) => (
-                        <div key={feature.id} className="feature-card" data-feature={feature.id}>
-                            <div className="feature-icon">
-                                {feature.icon}
-                            </div>
-                            <h3 className="feature-title">{feature.title}</h3>
-                            <p className="feature-description">{feature.description}</p>
-                            <a href="#" className="feature-link">
-                                Learn more
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                            </a>
-                        </div>
+                    {featuresData.map((feature, index) => (
+                        <FeatureCard key={feature.id} feature={feature} index={index} />
                     ))}
                 </div>
             </div>

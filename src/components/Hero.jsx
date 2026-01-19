@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 
 function Hero() {
     const statsRef = useRef(null)
+    const dashboardPreviewRef = useRef(null)
+    const heroVisualRef = useRef(null)
     const [statValues, setStatValues] = useState({
         users: 0,
         millions: 0,
@@ -45,6 +47,82 @@ function Hero() {
             if (statsRef.current) {
                 observer.unobserve(statsRef.current)
             }
+        }
+    }, [])
+
+    // Mouse parallax effect for dashboard preview
+    useEffect(() => {
+        const dashboardPreview = dashboardPreviewRef.current
+        if (!dashboardPreview) return
+
+        let animationFrameId
+
+        const handleMouseMove = (e) => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId)
+            }
+
+            animationFrameId = requestAnimationFrame(() => {
+                const rect = dashboardPreview.getBoundingClientRect()
+                const x = (e.clientX - rect.left) / rect.width
+                const y = (e.clientY - rect.top) / rect.height
+
+                const cards = dashboardPreview.querySelectorAll('.preview-card')
+                cards.forEach((card, index) => {
+                    const depth = (index + 1) * 5
+                    const moveX = (x - 0.5) * depth
+                    const moveY = (y - 0.5) * depth
+                    card.style.transform = `translate(${moveX}px, ${moveY}px)`
+                })
+
+                const chips = dashboardPreview.querySelectorAll('.floating-chip')
+                chips.forEach((chip, index) => {
+                    const depth = (index + 1) * 8
+                    const moveX = (x - 0.5) * depth
+                    const moveY = (y - 0.5) * depth
+                    chip.style.transform = `translate(${moveX}px, ${moveY}px)`
+                })
+            })
+        }
+
+        const handleMouseLeave = () => {
+            const cards = dashboardPreview.querySelectorAll('.preview-card')
+            cards.forEach(card => {
+                card.style.transform = ''
+            })
+
+            const chips = dashboardPreview.querySelectorAll('.floating-chip')
+            chips.forEach(chip => {
+                chip.style.transform = ''
+            })
+        }
+
+        dashboardPreview.addEventListener('mousemove', handleMouseMove)
+        dashboardPreview.addEventListener('mouseleave', handleMouseLeave)
+
+        return () => {
+            dashboardPreview.removeEventListener('mousemove', handleMouseMove)
+            dashboardPreview.removeEventListener('mouseleave', handleMouseLeave)
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId)
+            }
+        }
+    }, [])
+
+    // Scroll parallax effect for hero visual
+    useEffect(() => {
+        const heroVisual = heroVisualRef.current
+        if (!heroVisual) return
+
+        const handleScroll = () => {
+            const scrolled = window.pageYOffset
+            heroVisual.style.transform = `translateY(${scrolled * 0.3}px)`
+        }
+
+        window.addEventListener('scroll', handleScroll, { passive: true })
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll)
         }
     }, [])
 
@@ -98,8 +176,8 @@ function Hero() {
                         </div>
                     </div>
                 </div>
-                <div className="hero-visual fade-in-right" style={{ animationDelay: '0.3s' }}>
-                    <div className="dashboard-preview">
+                <div className="hero-visual fade-in-right" style={{ animationDelay: '0.3s' }} ref={heroVisualRef}>
+                    <div className="dashboard-preview" ref={dashboardPreviewRef}>
                         <div className="preview-card card-1">
                             <div className="card-header">
                                 <span className="card-title">Total Balance</span>
@@ -178,3 +256,5 @@ function Hero() {
 }
 
 export default Hero
+
+
